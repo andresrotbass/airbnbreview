@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Airbnb Review Generator</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      min-height: 100vh;
+      background: linear-gradient(135deg, #fff5f5 0%, #fff 50%, #f0f7ff 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px 16px;
+      font-family: 'Georgia', serif;
+    }
+
+    .card {
+      width: 100%;
+      max-width: 480px;
+      background: white;
+      border-radius: 20px;
+      box-shadow: 0 8px 40px rgba(0,0,0,0.10);
+      overflow: hidden;
+    }
+
+    .header {
+      background: linear-gradient(135deg, #FF5A5F 0%, #e0484d 100%);
+      padding: 24px 28px 20px;
+      color: white;
+    }
+    .header-tag {
+      display: flex; align-items: center; gap: 10px; margin-bottom: 4px;
+      font-size: 11px; letter-spacing: 0.15em; text-transform: uppercase; opacity: 0.85;
+    }
+    .header h1 { font-size: 24px; font-weight: 700; letter-spacing: -0.01em; }
+    .header p { margin-top: 4px; font-size: 13px; opacity: 0.8; }
+
+    .body { padding: 28px; }
+
+    .section { display: flex; flex-direction: column; gap: 6px; margin-bottom: 20px; }
+
+    label.field-label {
+      font-size: 13px; font-weight: 600; color: #555;
+      letter-spacing: 0.02em; text-transform: uppercase;
+    }
+
+    input[type="text"], input[type="password"], textarea {
+      width: 100%; padding: 10px 14px;
+      border: 1.5px solid #e0e0e0; border-radius: 10px;
+      font-size: 15px; font-family: inherit; color: #222;
+      background: #fafafa; outline: none; transition: border-color 0.2s; resize: vertical;
+    }
+    input[type="text"]:focus, input[type="password"]:focus, textarea:focus { border-color: #FF5A5F; }
+
+    /* Setup screen */
+    #setupView { display: none; }
+    .setup-box {
+      background: #fffbf0; border: 1.5px solid #ffe082;
+      border-radius: 14px; padding: 20px; margin-bottom: 0;
+    }
+    .setup-box h2 { font-size: 16px; color: #5d4037; margin-bottom: 8px; }
+    .setup-box p { font-size: 13px; color: #795548; margin-bottom: 14px; line-height: 1.6; }
+    .setup-box a { color: #FF5A5F; }
+    .setup-box input { font-family: monospace; font-size: 13px; background: white; margin-bottom: 12px; }
+    .key-saved-badge {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: #e8f5e9; border: 1px solid #a5d6a7; border-radius: 8px;
+      padding: 6px 12px; font-size: 12px; color: #2e7d32; margin-bottom: 14px;
+    }
+
+    /* Stars */
+    .stars { display: flex; gap: 6px; margin-top: 6px; align-items: center; }
+    .star {
+      background: none; border: none; cursor: pointer; font-size: 28px;
+      color: #ddd; transition: color 0.15s, transform 0.1s; padding: 0; line-height: 1;
+    }
+    .star.active { color: #FF5A5F; transform: scale(1.1); }
+    .star-label { color: #888; font-size: 13px; margin-left: 4px; }
+
+    /* Toggles box */
+    .toggles-box {
+      background: #fafafa; border-radius: 12px; padding: 16px;
+      display: flex; flex-direction: column; gap: 12px;
+      border: 1px solid #f0f0f0; margin-bottom: 20px;
+    }
+    .toggles-box .box-title {
+      font-size: 13px; font-weight: 600; color: #555;
+      text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px;
+    }
+    .toggle-row {
+      display: flex; align-items: center; gap: 10px;
+      cursor: pointer; user-select: none;
+    }
+    .toggle-track {
+      width: 44px; height: 24px; border-radius: 12px; background: #ccc;
+      position: relative; transition: background 0.2s; flex-shrink: 0;
+    }
+    .toggle-track.on { background: #FF5A5F; }
+    .toggle-thumb {
+      position: absolute; top: 3px; left: 3px; width: 18px; height: 18px;
+      border-radius: 50%; background: white;
+      transition: left 0.2s; box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+    }
+    .toggle-track.on .toggle-thumb { left: 23px; }
+    .toggle-label { font-size: 14px; color: #444; }
+
+    #issueBox { margin-top: 8px; display: none; }
+    #issueBox.visible { display: block; }
+
+    .btn-primary {
+      width: 100%; padding: 14px;
+      background: linear-gradient(135deg, #FF5A5F, #e0484d);
+      color: white; border: none; border-radius: 12px;
+      font-size: 15px; font-weight: 700; cursor: pointer;
+      letter-spacing: 0.02em; font-family: inherit;
+      transition: transform 0.1s; margin-top: 4px;
+    }
+    .btn-primary:hover { transform: translateY(-1px); }
+    .btn-primary:disabled { background: #e0e0e0; color: #aaa; cursor: not-allowed; transform: none; }
+
+    .btn-outline {
+      padding: 12px 16px; background: white; color: #FF5A5F;
+      border: 1.5px solid #FF5A5F; border-radius: 10px;
+      font-size: 14px; font-weight: 600; cursor: pointer; font-family: inherit;
+    }
+    .btn-copy {
+      flex: 1; padding: 12px;
+      background: linear-gradient(135deg, #FF5A5F, #e0484d);
+      color: white; border: none; border-radius: 10px;
+      font-size: 14px; font-weight: 700; cursor: pointer;
+      font-family: inherit; transition: all 0.2s;
+    }
+    .btn-copy.copied { background: #e8f5e9; color: #2e7d32; }
+    .btn-reset {
+      width: 100%; padding: 11px; background: white; color: #888;
+      border: 1.5px solid #e0e0e0; border-radius: 10px;
+      font-size: 14px; cursor: pointer; font-family: inherit;
+    }
+    .btn-link {
+      background: none; border: none; color: #FF5A5F;
+      font-size: 12px; cursor: pointer; font-family: inherit;
+      text-decoration: underline; padding: 0;
+    }
+    .row-btns { display: flex; gap: 10px; }
+
+    .error-box {
+      background: #fff0f0; border: 1px solid #ffcdd2; border-radius: 8px;
+      padding: 10px 14px; font-size: 13px; color: #c62828;
+      margin-bottom: 12px; display: none;
+    }
+
+    #loadingView { text-align: center; padding: 40px 0; display: none; }
+    .spinner {
+      width: 48px; height: 48px; border: 3px solid #f0f0f0;
+      border-top: 3px solid #FF5A5F; border-radius: 50%;
+      margin: 0 auto 16px; animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    #loadingView p { color: #888; font-size: 14px; }
+
+    #resultView { display: none; }
+    .result-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+    .result-name { font-size: 13px; font-weight: 600; color: #555; text-transform: uppercase; letter-spacing: 0.05em; }
+    .result-stars { font-size: 20px; }
+    .review-box {
+      background: #fafafa; border: 1.5px solid #f0f0f0; border-radius: 12px;
+      padding: 18px; font-size: 15px; line-height: 1.7;
+      color: #333; font-style: italic; margin-bottom: 20px;
+    }
+    .footer-key {
+      text-align: center; margin-top: 16px;
+      font-size: 12px; color: #bbb;
+    }
+  </style>
+</head>
+<body>
+<div class="card">
+  <div class="header">
+    <div class="header-tag">
+      <span style="font-size:20px">✦</span>
+      Airbnb Host Tool
+    </div>
+    <h1>Review Generator</h1>
+    <p>Authentic, AI-powered reviews for every guest</p>
+  </div>
+
+  <div class="body">
+
+    <!-- SETUP (first time only) -->
+    <div id="setupView">
+      <div class="setup-box">
+        <h2>🔑 One-time setup</h2>
+        <p>Enter your <a href="https://console.anthropic.com/keys" target="_blank">Anthropic API key</a>. It will be saved in your browser — you'll never need to enter it again.</p>
+        <input type="password" id="apiKeyInput" placeholder="sk-ant-..." />
+        <button class="btn-primary" onclick="saveKey()">Save & Continue</button>
+      </div>
+    </div>
+
+    <!-- FORM -->
+    <div id="formView" style="display:none;">
+
+      <!-- Guest name -->
+      <div class="section">
+        <label class="field-label">Guest name</label>
+        <input type="text" id="guestName" placeholder="e.g. John Smith" />
+      </div>
+
+      <!-- Rating -->
+      <div class="section">
+        <label class="field-label">Overall rating</label>
+        <div class="stars" id="starsRow">
+          <button class="star" data-val="1">★</button>
+          <button class="star" data-val="2">★</button>
+          <button class="star" data-val="3">★</button>
+          <button class="star" data-val="4">★</button>
+          <button class="star" data-val="5">★</button>
+          <span class="star-label" id="starLabel"></span>
+        </div>
+      </div>
+
+      <!-- Toggles -->
+      <div class="toggles-box">
+        <div class="box-title">Guest aspects</div>
+        <div class="toggle-row" onclick="toggleSwitch('cleanliness')">
+          <div class="toggle-track on" id="track-cleanliness"><div class="toggle-thumb"></div></div>
+          <span class="toggle-label">Left the place clean</span>
+        </div>
+        <div class="toggle-row" onclick="toggleSwitch('communication')">
+          <div class="toggle-track on" id="track-communication"><div class="toggle-thumb"></div></div>
+          <span class="toggle-label">Good communication</span>
+        </div>
+        <div class="toggle-row" onclick="toggleSwitch('rules')">
+          <div class="toggle-track on" id="track-rules"><div class="toggle-thumb"></div></div>
+          <span class="toggle-label">Followed house rules</span>
+        </div>
+        <div class="toggle-row" onclick="toggleSwitch('recommend')">
+          <div class="toggle-track on" id="track-recommend"><div class="toggle-thumb"></div></div>
+          <span class="toggle-label">Would recommend them</span>
+        </div>
+      </div>
+
+      <!-- Issue -->
+      <div class="section" style="margin-bottom:20px;">
+        <div class="toggle-row" onclick="toggleSwitch('hadIssue'); toggleIssueBox()">
+          <div class="toggle-track" id="track-hadIssue"><div class="toggle-thumb"></div></div>
+          <span class="toggle-label">Was there any issue during the stay?</span>
+        </div>
+        <div id="issueBox">
+          <textarea id="issueDescription" rows="3" placeholder="Briefly describe the issue (e.g. arrived late without notice, left dirty dishes...)"></textarea>
+        </div>
+      </div>
+
+      <!-- Extra note -->
+      <div class="section">
+        <label class="field-label">Additional note (optional)</label>
+        <input type="text" id="extraNote" placeholder="Anything special you'd like to highlight..." />
+      </div>
+
+      <div class="error-box" id="errorBox"></div>
+
+      <button class="btn-primary" onclick="generateReview()">✦ Generate Review with AI</button>
+
+      <div class="footer-key">
+        <button class="btn-link" onclick="changeKey()">Change API key</button>
+      </div>
+    </div>
+
+    <!-- LOADING -->
+    <div id="loadingView">
+      <div class="spinner"></div>
+      <p id="loadingText">Writing review…</p>
+    </div>
+
+    <!-- RESULT -->
+    <div id="resultView">
+      <div class="result-header">
+        <span class="result-name" id="resultName"></span>
+        <span class="result-stars" id="resultStars"></span>
+      </div>
+      <div class="review-box" id="reviewBox"></div>
+      <div class="row-btns" style="margin-bottom:12px;">
+        <button class="btn-copy" id="copyBtn" onclick="copyReview()">Copy review</button>
+        <button class="btn-outline" onclick="regenerate()" title="Regenerate">↺</button>
+      </div>
+      <button class="btn-reset" onclick="reset()">+ New review</button>
+    </div>
+
+  </div>
+</div>
+
+<script>
+  const ratingLabels = { 1:"Very poor", 2:"Poor", 3:"Average", 4:"Good", 5:"Excellent" };
+  let currentRating = 0;
+  let toggleState = { cleanliness: true, communication: true, rules: true, recommend: true, hadIssue: false };
+  let lastReview = "";
+
+  // On load: check if key exists in localStorage
+  window.addEventListener('DOMContentLoaded', () => {
+    const saved = localStorage.getItem('anthropic_key');
+    if (saved) {
+      showView('form');
+    } else {
+      showView('setup');
+    }
+  });
+
+  function saveKey() {
+    const key = document.getElementById('apiKeyInput').value.trim();
+    if (!key.startsWith('sk-ant-')) {
+      alert('Please enter a valid Anthropic API key (starts with sk-ant-)');
+      return;
+    }
+    localStorage.setItem('anthropic_key', key);
+    showView('form');
+  }
+
+  function changeKey() {
+    localStorage.removeItem('anthropic_key');
+    document.getElementById('apiKeyInput').value = '';
+    showView('setup');
+  }
+
+  function getKey() {
+    return localStorage.getItem('anthropic_key') || '';
+  }
+
+  // Stars
+  document.querySelectorAll('.star').forEach(btn => {
+    btn.addEventListener('click', () => {
+      currentRating = parseInt(btn.dataset.val);
+      updateStars();
+    });
+  });
+
+  function updateStars() {
+    document.querySelectorAll('.star').forEach((btn, i) => {
+      btn.classList.toggle('active', i < currentRating);
+    });
+    document.getElementById('starLabel').textContent = currentRating > 0 ? ratingLabels[currentRating] : '';
+  }
+
+  function toggleSwitch(key) {
+    toggleState[key] = !toggleState[key];
+    document.getElementById('track-' + key).classList.toggle('on', toggleState[key]);
+  }
+
+  function toggleIssueBox() {
+    document.getElementById('issueBox').classList.toggle('visible', toggleState.hadIssue);
+  }
+
+  function showError(msg) {
+    const box = document.getElementById('errorBox');
+    box.textContent = msg;
+    box.style.display = 'block';
+  }
+
+  function hideError() {
+    document.getElementById('errorBox').style.display = 'none';
+  }
+
+  function showView(view) {
+    document.getElementById('setupView').style.display  = view === 'setup'   ? 'block' : 'none';
+    document.getElementById('formView').style.display   = view === 'form'    ? 'block' : 'none';
+    document.getElementById('loadingView').style.display = view === 'loading' ? 'block' : 'none';
+    document.getElementById('resultView').style.display = view === 'result'  ? 'block' : 'none';
+  }
+
+  async function generateReview() {
+    hideError();
+    if (!document.getElementById('guestName').value.trim()) { showError('Please enter the guest name.'); return; }
+    if (currentRating === 0) { showError('Please select a star rating.'); return; }
+    if (toggleState.hadIssue && !document.getElementById('issueDescription').value.trim()) { showError('Please describe the issue.'); return; }
+
+    const name      = document.getElementById('guestName').value.trim();
+    const apiKey    = getKey();
+    const issue     = document.getElementById('issueDescription').value.trim();
+    const extraNote = document.getElementById('extraNote').value.trim();
+
+    document.getElementById('loadingText').textContent = `Writing review for ${name}…`;
+    showView('loading');
+
+    const prompt = `You are an Airbnb host and must write a short review (3-5 sentences) in English about the following guest. The review must sound natural, human, and organic. Vary the style slightly from typical Airbnb reviews. Avoid repetitive clichés. Each review should feel genuinely unique.
+
+Guest details:
+- Name: ${name}
+- Overall rating: ${currentRating}/5 stars (${ratingLabels[currentRating]})
+- Cleanliness: ${toggleState.cleanliness ? "Great" : "Needs improvement"}
+- Communication: ${toggleState.communication ? "Excellent" : "Average"}
+- Followed house rules: ${toggleState.rules ? "Yes" : "Not entirely"}
+- Would you recommend them: ${toggleState.recommend ? "Yes" : "No"}
+${toggleState.hadIssue ? `- There was an issue: ${issue}` : "- No issues during the stay"}
+${extraNote ? `- Additional note: ${extraNote}` : ""}
+
+Write ONLY the review, no introduction or explanation. Make it sound authentic and personal.`;
+
+    try {
+      const res = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-api-key": apiKey,
+          "anthropic-version": "2023-06-01",
+          "anthropic-dangerous-direct-browser-access": "true"
+        },
+        body: JSON.stringify({
+          model: "claude-sonnet-4-20250514",
+          max_tokens: 1000,
+          messages: [{ role: "user", content: prompt }]
+        })
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data?.error?.message || "API error");
+      const text = data?.content?.[0]?.text || "";
+      if (!text) throw new Error("Empty response");
+
+      lastReview = text;
+      document.getElementById('resultName').textContent = `Review for ${name}`;
+      document.getElementById('resultStars').textContent = '★'.repeat(currentRating) + '☆'.repeat(5 - currentRating);
+      document.getElementById('reviewBox').textContent = `"${text}"`;
+      showView('result');
+
+    } catch (e) {
+      showError("Error: " + (e.message || "Something went wrong. Please check your API key and try again."));
+      showView('form');
+    }
+  }
+
+  function regenerate() {
+    showView('form');
+    setTimeout(() => generateReview(), 50);
+  }
+
+  function copyReview() {
+    navigator.clipboard.writeText(lastReview).then(() => {
+      const btn = document.getElementById('copyBtn');
+      btn.textContent = '✓ Copied!';
+      btn.classList.add('copied');
+      setTimeout(() => { btn.textContent = 'Copy review'; btn.classList.remove('copied'); }, 2000);
+    });
+  }
+
+  function reset() {
+    currentRating = 0;
+    updateStars();
+    toggleState = { cleanliness: true, communication: true, rules: true, recommend: true, hadIssue: false };
+    ['cleanliness','communication','rules','recommend'].forEach(k => document.getElementById('track-'+k).classList.add('on'));
+    document.getElementById('track-hadIssue').classList.remove('on');
+    document.getElementById('issueBox').classList.remove('visible');
+    document.getElementById('guestName').value = '';
+    document.getElementById('issueDescription').value = '';
+    document.getElementById('extraNote').value = '';
+    lastReview = '';
+    hideError();
+    showView('form');
+  }
+</script>
+</body>
+</html>
